@@ -1,0 +1,4 @@
+all-in-one-infer==3.1.0
+Flask==3.1.2
+gunicorn==23.0.0
+madmom-modern @ git+https://github.com/imcmurray/madmom-modern.git@df718c704a3b460ac6c61b7e61663a0436b91bda

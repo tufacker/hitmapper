@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="HitMapper — automatic, musician-oriented song mapping.">
+  <title>HitMapper</title>
+  <link rel="stylesheet" href="styles.css?v=20261125-4">
+</head>
+<body>
+  <main class="app-shell">
+    <header class="app-header">
+      <div class="brand-lockup">
+        <div class="brand-mark" aria-hidden="true"><span></span></div>
+        <div>
+          <div class="eyebrow">Collaborative song cartography</div>
+          <h1>HitMapper</h1>
+        </div>
+      </div>
+      <div class="track-heading">
+        <strong id="track-name">No song loaded</strong>
+        <span id="track-details">Upload a recording to build its session map</span>
+      </div>
+      <button id="open-song-dialog" class="button upload-button" type="button">Songs</button>
+    </header>
+
+    <audio id="song" preload="metadata"></audio>
+
+    <section class="workspace" aria-label="Playback workspace">
+      <div class="map-panel panel">
+        <div class="panel-heading">
+          <div>
+            <span class="eyebrow">Whole-song view</span>
+            <h2>Arrangement wheel</h2>
+          </div>
+          <div class="wheel-key" aria-label="Visualization key">
+            <span><i class="key-section"></i>section</span>
+            <span><i class="key-chord"></i>chord</span>
+            <span><i class="key-energy"></i>energy</span>
+            <span><i class="key-motif"></i>detected repeat pattern</span>
+            <span><i class="key-turn"></i>detected transition</span>
+          </div>
+        </div>
+        <div class="wheel-wrap">
+          <svg id="song-wheel" role="img" aria-labelledby="wheel-title wheel-desc">
+            <title id="wheel-title">Interactive arrangement wheel</title>
+            <desc id="wheel-desc">Analysis-detected repetitions form the innermost ring, sections occupy the next ring, chord centers form the middle ring, energy shapes the outside edge, and a bright playhead follows playback.</desc>
+          </svg>
+          <div class="wheel-center" aria-hidden="true">
+            <span id="center-section">—</span>
+            <strong id="center-chord">—</strong>
+            <span id="center-position">—</span>
+            <div class="center-next">
+              <div class="center-next-label"><span>Next</span><strong id="center-next-chord">—</strong><small id="center-next-count">—</small></div>
+              <div class="center-next-track"><i id="center-next-progress"></i></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <aside class="live-panel panel" aria-label="Live track status">
+        <div class="now-block">
+          <span class="eyebrow">Now</span>
+          <div class="now-chord" id="now-chord">—</div>
+          <h2 id="now-section">No song loaded</h2>
+          <div class="now-meta">
+            <span id="now-bar">—</span>
+            <span id="now-motif">—</span>
+            <span id="now-chord-source">—</span>
+          </div>
+        </div>
+
+        <div class="energy-meter" aria-label="Current energy">
+          <div class="meter-label"><span>Energy</span><strong id="energy-label">0%</strong></div>
+          <div class="meter-track"><div id="energy-fill" class="meter-fill"></div></div>
+        </div>
+
+        <section class="countdowns" aria-labelledby="countdown-title">
+          <div class="section-heading">
+            <h3 id="countdown-title">Coming up</h3>
+            <span>beats remaining</span>
+          </div>
+          <div class="countdown-grid">
+            <article class="countdown-card countdown-card--chord">
+              <span>Chord</span>
+              <small id="next-chord-count">—</small>
+            </article>
+            <article class="countdown-card">
+              <span>Section</span>
+              <strong id="next-section-name">—</strong>
+              <small id="next-section-count">—</small>
+            </article>
+          </div>
+        </section>
+
+        <section class="session-tools" aria-labelledby="session-title">
+          <div class="section-heading">
+            <h3 id="session-title">Session notes</h3>
+            <span>saved in this browser</span>
+          </div>
+          <textarea id="session-notes" aria-label="Session notes" placeholder="Arrangement ideas, lyric cues, mix notes…"></textarea>
+          <div class="tool-row">
+            <button id="stamp-note" class="button ghost" type="button">Add timestamp</button>
+            <button id="clear-notes" class="button ghost" type="button">Clear</button>
+          </div>
+        </section>
+      </aside>
+    </section>
+
+    <section class="transport panel" aria-label="Playback controls">
+      <div class="transport-buttons">
+        <button id="previous-event" class="icon-button" type="button" aria-label="Previous event">◀|</button>
+        <button id="play-toggle" class="play-button" type="button" aria-label="Play">▶</button>
+        <button id="next-event" class="icon-button" type="button" aria-label="Next event">|▶</button>
+      </div>
+      <div class="scrubber-block">
+        <div class="time-row"><span id="current-time" class="tabular">0:00.0</span><span id="time-to-end" class="tabular">−0:00.0</span></div>
+        <input id="scrubber" type="range" min="0" max="1" step="0.01" value="0" aria-label="Playback position">
+      </div>
+      <div class="transport-options">
+        <button id="audio-mode" class="button" type="button" aria-pressed="false" title="Hear detected beats, downbeats, and model section boundaries">Hear AI markers</button>
+        <button id="loop-section" class="button" type="button" aria-pressed="false">Loop section</button>
+        <label class="rate-control">Speed
+          <select id="playback-rate" aria-label="Playback speed">
+            <option value="0.75">0.75×</option>
+            <option value="0.9">0.90×</option>
+            <option value="1" selected>1.00×</option>
+            <option value="1.1">1.10×</option>
+            <option value="1.25">1.25×</option>
+          </select>
+        </label>
+      </div>
+    </section>
+
+    <section class="timeline-panel panel" aria-labelledby="timeline-title">
+      <div class="panel-heading timeline-heading">
+        <div>
+          <span class="eyebrow">Click anywhere to seek</span>
+          <h2 id="timeline-title">Session ribbon</h2>
+        </div>
+        <div class="timeline-actions">
+          <div class="timeline-readout tabular" id="timeline-readout">—</div>
+          <div class="ribbon-controls" aria-label="Ribbon view controls">
+            <button id="ribbon-zoom-out" class="ribbon-control" type="button" aria-label="Zoom ribbon out">−</button>
+            <button id="ribbon-zoom-reset" class="ribbon-control zoom-readout tabular" type="button" aria-label="Reset ribbon zoom">1.0×</button>
+            <button id="ribbon-zoom-in" class="ribbon-control" type="button" aria-label="Zoom ribbon in">+</button>
+            <details id="section-tools" class="section-tools">
+              <summary class="ribbon-control section-tools-toggle">Section tools</summary>
+              <div class="section-tools-popover" aria-label="Section editing tools">
+                <span class="eyebrow">Editing section</span>
+                <strong id="section-editor-label">—</strong>
+                <label class="section-name-field">
+                  <span>Name</span>
+                  <input id="section-name-input" type="text" maxlength="48" autocomplete="off">
+                </label>
+                <button id="rename-section" class="section-action primary" type="button">Save name</button>
+                <div class="section-divider-actions">
+                  <button id="add-divider" class="section-action" type="button">Add divider</button>
+                  <button id="remove-left-divider" class="section-action" type="button">Remove left</button>
+                  <button id="remove-right-divider" class="section-action" type="button">Remove right</button>
+                </div>
+                <span class="section-tools-help">Divider edits snap to whole bars and update the wheel immediately.</span>
+              </div>
+            </details>
+            <button id="reset-sections" class="ribbon-control reset-sections" type="button" title="Restore AI-detected section boundaries">Reset sections</button>
+          </div>
+        </div>
+      </div>
+      <div id="ribbon-scroll" class="ribbon-scroll">
+        <div id="session-ribbon" class="session-ribbon" role="application" aria-label="Zoomable and editable whole-song timeline">
+          <div id="ribbon-sections" class="ribbon-lane section-lane"></div>
+          <div id="ribbon-chords" class="ribbon-lane chord-lane"></div>
+          <div id="ribbon-energy" class="ribbon-lane energy-lane"></div>
+          <div id="ribbon-motifs" class="ribbon-lane motif-lane"></div>
+          <div id="ribbon-model" class="ribbon-lane model-lane" aria-label="AI-detected structure"></div>
+          <div id="ribbon-turns" class="turn-layer" aria-label="Detected transition candidates"></div>
+          <div id="ribbon-playhead" class="ribbon-playhead" aria-hidden="true"><span></span></div>
+          <div class="timeline-axis tabular" aria-hidden="true"><span>0:00</span></div>
+        </div>
+      </div>
+      <div id="ribbon-tooltip" class="ribbon-tooltip" aria-hidden="true"></div>
+    </section>
+
+    <footer class="app-footer">
+      <span>HitMapper keeps songs, analysis, and notes on this computer.</span>
+      <span>Keys: Space play/pause · ←/→ five seconds · Shift + ←/→ events · L loop section</span>
+    </footer>
+  </main>
+
+  <dialog id="song-dialog" class="song-dialog">
+    <form id="song-upload-form" class="song-upload" method="dialog">
+      <div class="upload-heading">
+        <div>
+          <span class="eyebrow">Session library</span>
+          <h2>Choose a song</h2>
+        </div>
+        <button id="close-song-dialog" class="dialog-close" type="button" aria-label="Close">×</button>
+      </div>
+      <p>Open a completed map, or upload another mix or rough recording for HitMapper to analyze.</p>
+      <section class="song-library" aria-labelledby="song-library-title">
+        <div class="song-library-heading">
+          <h3 id="song-library-title">Uploaded songs</h3>
+          <span id="song-library-count" class="song-library-count"></span>
+        </div>
+        <div id="song-library-list" class="song-library-list"></div>
+        <p id="song-library-empty" class="song-library-empty">No uploaded songs yet. Add the first one below.</p>
+      </section>
+      <div class="upload-divider"><span>Add another song</span></div>
+      <label id="song-dropzone" class="song-dropzone">
+        <input id="song-file" name="song" type="file" accept="audio/*,.aif,.aiff" required>
+        <strong id="song-file-label">Drop audio here or choose a file</strong>
+        <span>MP3, WAV, FLAC, M4A, AAC, OGG, OPUS, AIFF · up to 500 MB</span>
+      </label>
+      <label class="song-name-field">
+        <span>Song name</span>
+        <input id="song-name" name="name" type="text" maxlength="120" placeholder="Taken from the filename">
+      </label>
+      <div id="analysis-progress" class="analysis-progress" hidden>
+        <div class="analysis-progress-copy"><strong id="analysis-stage">Preparing audio</strong><span id="analysis-percent">0%</span></div>
+        <div class="analysis-progress-track"><i id="analysis-progress-fill"></i></div>
+        <small>Full analysis can take several minutes. You can leave this window open.</small>
+      </div>
+      <div id="upload-error" class="upload-error" role="alert" hidden></div>
+      <div class="upload-actions">
+        <button id="cancel-song-upload" class="button ghost" type="button">Cancel</button>
+        <button id="analyze-song" class="button analyze-button" type="submit">Analyze song</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="app.js?v=20261125-4"></script>
+</body>
+</html>

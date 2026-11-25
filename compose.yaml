@@ -1,0 +1,16 @@
+services:
+  hitmapper:
+    build: .
+    container_name: hitmapper
+    ports:
+      # This Mac only. HitMapper has no login; to reach it from other machines
+      # on a network you trust, change this to "8766:8766" and set
+      # HITMAPPER_ALLOWED_HOSTS (see README).
+      - "127.0.0.1:8766:8766"
+    volumes:
+      - hitmapper-data:/data
+    restart: unless-stopped
+
+volumes:
+  hitmapper-data:
+

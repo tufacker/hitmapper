@@ -1,0 +1,13 @@
+.DS_Store
+.git
+.gitignore
+.runtime-data
+.venv
+__pycache__
+*.pyc
+archive
+tests
+docs
+CLAUDE.md
+CLAUDE_HANDOFF.md
+*.command
